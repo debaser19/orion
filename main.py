@@ -1,7 +1,6 @@
 import requests
 import config
 import json
-import pandas as pd
 
 
 def createInstance():
