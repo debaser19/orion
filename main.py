@@ -72,43 +72,47 @@ def listInstances():
     orgs = getOrgs()
 
     # loop through orgs
+    # input_org = input('Enter an organization: ')
     for o in orgs:
         org_id = o['id']
         reseller_id = o['reseller_id']
-        if o['name'] == 'Private Cloud Sandbox':
-            # get org name
-            url = f'https://iaas.cloudcopartner.com/admin/api/v1/resellers/{reseller_id}/organizations/{org_id}'
-            r = requests.get(url, headers=headers)
-            org_name = r.json()['name']
+        # if o['name'] == input_org:
+        # get org name
+        url = f'https://iaas.cloudcopartner.com/admin/api/v1/resellers/{reseller_id}/organizations/{org_id}'
+        org_request = requests.get(url, headers=headers)
+        org_name = org_request.json()['name']
 
-            # check if we already have a token
-            url = f'https://iaas.cloudcopartner.com/admin/api/v1/resellers/{reseller_id}/organizations/{org_id}/applications'
-            r = requests.get(url, headers=headers)
-            applications = r.json()
-            token_present = False
-            for a in applications:
-                if f'{org_name}_token' in a['name']:
-                    token_present = True
-                    token = a
-            
-            if not token_present:
-                print('No token found, creating one now')
-                token = createApplication(org_id, org_name, reseller_id)
-            else:
-                print('Already have a token, skipping token creation')
+        # check if we already have a token
+        print(f'Checking for Application in org: {o["name"]}')
+        url = f'https://iaas.cloudcopartner.com/admin/api/v1/resellers/{reseller_id}/organizations/{org_id}/applications'
+        app_request = requests.get(url, headers=headers)
+        applications = app_request.json()
+        token_present = False
+        for a in applications:
+            if f'{org_name}_token' in a['name']:
+                token_present = True
+                token = a
+        
+        if not token_present:
+            print('No token found, creating one now')
+            token = createApplication(org_id, org_name, reseller_id)
+        else:
+            print('Already have a token, skipping token creation')
 
     client_id = token['client_id']
     client_secret = token['client_secret']
 
     # get the oauth token
+    print('Reaching out for OAuth token')
     oauth_token = getOauthToken(client_id, client_secret)
 
     # list the instances
+    print('Listing found instances')
     headers = {'Authorization': f'Bearer {oauth_token}'}
     url = 'https://iaas.cloudcopartner.com/api/v1/instances'
 
-    r = requests.get(url, headers=headers)
-    instances = r.json()
+    instance_request = requests.get(url, headers=headers)
+    instances = instance_request.json()
 
     for i in instances:
         print(json.dumps(i, indent=4))
