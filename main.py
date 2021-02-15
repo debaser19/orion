@@ -1,11 +1,12 @@
 import requests
 import config
 import json
+import pandas as pd
 
 
 def createInstance():
     # lets create an instance
-    url = url + 'https://iaas.cloudcopartner.com/api/v1/instances'
+    url = 'https://iaas.cloudcopartner.com/api/v1/instances'
     headers = {'Authorization': f'Bearer {end_user_api_key}'}
 
     # create the payload
@@ -21,7 +22,6 @@ def createInstance():
 
     r = requests.post(url, headers=headers, json=payload)
     print(json.dumps(r.json(), indent=4))
-
 
 
 def getResellers():
@@ -52,11 +52,12 @@ def createApplication(org_id, org_name, reseller_id):
         'Content-Type': 'application/json'
     }
     
-    # create the token if we don't have one yet
+    # create the application if we don't have one yet
     payload = {'name': f'{org_name}_token'}
     url = f'https://iaas.cloudcopartner.com/admin/api/v1/resellers/{reseller_id}/organizations/{org_id}/applications'
     r = requests.post(url, headers=headers, json=payload)
 
+    # grab list of applications and return the client id and secret for the matching application name
     tokens = requests.get(url, headers=headers)
     for t in tokens.json():
         if t['name'] == f'{org_name}_token':
@@ -65,15 +66,15 @@ def createApplication(org_id, org_name, reseller_id):
 
 def listInstances():
     # TODO: Set this up to take org id as a parameter
-    headers = {
-        'Authorization': f'Bearer {admin_api_key}',
-        'Content-Type': 'application/json'
-    }
     orgs = getOrgs()
+    instances_list = []
 
     # loop through orgs
-    # input_org = input('Enter an organization: ')
     for o in orgs:
+        headers = {
+            'Authorization': f'Bearer {admin_api_key}',
+            'Content-Type': 'application/json'
+        }
         org_id = o['id']
         reseller_id = o['reseller_id']
         # if o['name'] == input_org:
@@ -99,23 +100,61 @@ def listInstances():
         else:
             print('Already have a token, skipping token creation')
 
-    client_id = token['client_id']
-    client_secret = token['client_secret']
+        client_id = token['client_id']
+        client_secret = token['client_secret']
 
-    # get the oauth token
-    print('Reaching out for OAuth token')
-    oauth_token = getOauthToken(client_id, client_secret)
+        # get the oauth token
+        print('Reaching out for OAuth token')
+        oauth_token = getOauthToken(client_id, client_secret)
 
-    # list the instances
-    print('Listing found instances')
-    headers = {'Authorization': f'Bearer {oauth_token}'}
-    url = 'https://iaas.cloudcopartner.com/api/v1/instances'
+        # list the instances
+        headers = {'Authorization': f'Bearer {oauth_token}'}
+        url = 'https://iaas.cloudcopartner.com/api/v1/instances'
 
-    instance_request = requests.get(url, headers=headers)
-    instances = instance_request.json()
+        instance_request = requests.get(url, headers=headers)
+        instances = instance_request.json()
+        
+        print(f'Found {len(instances)} instance(s) for {org_name}')
 
-    for i in instances:
-        print(json.dumps(i, indent=4))
+        # loop through found instances and pull details
+        for i in instances:
+            # try to get ip address
+            wan_ip = ''
+            lan_ip = ''
+            try:
+                for adapter in i['network_adapters']:
+                    if adapter['network']['is_public']:
+                        wan_ip = adapter['ip_addresses'][0]['address']
+                    else:
+                        lan_ip = adapter['ip_addresses'][0]['address']
+            except:
+                print('Could not grab IP info')
+            
+            # get boot disk template
+            template = ''
+            try:
+                template = i['disks'][0]['template']['name']
+            except:
+                print(f'Found no disks for instance {i["name"]}')
+
+            instance_dict = {
+                'org_name': org_name,
+                'instance_name': i['name'],
+                'memory': i['memory'],
+                'performance_tier': i['performance_tier']['name'],
+                'region': i['region']['name'],
+                'template': template,
+                'wan_ip': wan_ip,
+                'lan_ip': lan_ip,
+                'state': i['state']
+            }
+
+            instances_list.append(instance_dict)
+            print(instance_dict)
+
+    # convert list of instances to csv
+    instance_df = pd.DataFrame(instances_list)
+    instance_df.to_csv('instances.csv', index=False)
 
 
 def getOauthToken(client_id, client_secret):
