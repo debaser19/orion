@@ -151,5 +151,4 @@ def getOauthToken(client_id, client_secret):
 
 if __name__ == '__main__':
     admin_api_key = config.admin_api_key
-    end_user_api_key = config.end_user_api_key
     listInstances()
