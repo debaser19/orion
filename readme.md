@@ -19,7 +19,7 @@ Create config file
 
 config.py contents
 ```
-admin_api_key = '<your api key>
+admin_api_key = '<your api key>'
 ```
 
 ## Usage
