@@ -27,6 +27,7 @@ def main():
     # format the org names and add to new list
     formatted_orgs = [ org.replace(' ', '-').lower() for org in orgs ]
 
+<<<<<<< HEAD
     # create orgs string
     orgs_string = '[3cx-private-cloud:children]\n'
     for o in formatted_orgs:
@@ -50,6 +51,14 @@ def main():
     inventory_file = open('3cx_inventory', 'w')
     inventory_file.write(final_string)
     inventory_file.close()
+=======
+    # match up IPs to org name
+    for o in formatted_orgs:
+        print(f'[{o}]')
+        for i in df:
+            if i['org_name'].replace(' ', '-').lower() == o:
+                print(i['wan_ip'])
+>>>>>>> 99b98191f6efcd4fd56960430817ac45b5556b8f
 
 
 if __name__ == '__main__':
