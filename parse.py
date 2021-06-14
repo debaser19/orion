@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 
 def main():
@@ -28,12 +27,29 @@ def main():
     # format the org names and add to new list
     formatted_orgs = [ org.replace(' ', '-').lower() for org in orgs ]
 
-    # match up IPs to org name
+    # create orgs string
+    orgs_string = '[3cx-private-cloud:children]\n'
     for o in formatted_orgs:
-        print(f'[{o}]')
+        orgs_string += f'{o}\n'
+
+    # match up IPs to org name
+    instances_string = ''
+    for o in formatted_orgs:
+        instances_string += f'[{o}]\n'
+        # print(f'[{o}]')
         for i in df:
             if i['org_name'].replace(' ', '-').lower() == o:
-                print(i['wan_ip'])
+                instances_string += f"{i['wan_ip']}\n"
+                # print(i['wan_ip'])
+        instances_string += "\n"
+
+    # join the org and instance strings
+    final_string = orgs_string + '\n' + instances_string
+
+    # write to file
+    inventory_file = open('3cx_inventory', 'w')
+    inventory_file.write(final_string)
+    inventory_file.close()
 
 
 if __name__ == '__main__':
