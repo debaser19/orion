@@ -3,7 +3,7 @@ import json
 import config
 
 
-def createInstance():
+def create_instance():
     # lets create an instance
     url = 'https://iaas.cloudcopartner.com/api/v1/instances'
     headers = {'Authorization': f'Bearer {end_user_api_key}'}
