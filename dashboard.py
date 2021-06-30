@@ -48,6 +48,7 @@ def main():
     with col2:
         performance_tier = st.selectbox('Performance Tier', instance_tiers_options, format_func=lambda x: instance_tiers_dict.get(x))
     
+        # TODO: Need to fix logic for high memory tier. Need to match the name up with id for 128GB
         if performance_tier == 'High Memory':
             memory_options = [1, 2, 4, 8, 16, 32, 64, 128]
             memory = st.select_slider('Memory (GB)', memory_options)
